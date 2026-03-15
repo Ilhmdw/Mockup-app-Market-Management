@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Happy Hobbies – Dashboard Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Syne', 'sans-serif'],
+            body: ['DM Sans', 'sans-serif'],
+          },
+          colors: {
+            brand:  { 400:'#fb923c', 500:'#f97316', 600:'#ea580c' },
+            ink:    '#0f0f0f',
+            muted:  '#6b7280',
+            sidebar:'#0f172a',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { font-family: 'DM Sans', sans-serif; }
+    h1,h2,h3,h4,.font-display { font-family: 'Syne', sans-serif; }
+
+    /* Sidebar */
+    .sidebar-link {
+      display:flex; align-items:center; gap:10px; padding:10px 14px;
+      border-radius:10px; font-size:14px; font-weight:500; color:#94a3b8;
+      transition: background 0.18s, color 0.18s;
+    }
+    .sidebar-link:hover  { background:rgba(255,255,255,0.07); color:#fff; }
+    .sidebar-link.active { background:#f97316; color:#fff; }
+
+    /* Drag & Drop Zone */
+    .drop-zone {
+      border: 2.5px dashed #d1d5db;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .drop-zone.drag-over {
+      border-color: #f97316;
+      background: #fff7ed;
+    }
+    .drop-zone:hover { border-color: #fb923c; }
+
+    /* Stat cards pulse */
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(16px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.5s cubic-bezier(.22,1,.36,1) both; }
+    .d1 { animation-delay:.05s } .d2 { animation-delay:.12s }
+    .d3 { animation-delay:.19s } .d4 { animation-delay:.26s }
+
+    /* Upload success animation */
+    @keyframes successPop {
+      0%   { transform:scale(0.8); opacity:0; }
+      60%  { transform:scale(1.08); }
+      100% { transform:scale(1); opacity:1; }
+    }
+    .success-pop { animation: successPop 0.4s cubic-bezier(.22,1,.36,1) both; }
+
+    /* Progress bar fill */
+    @keyframes fillBar {
+      from { width:0%; }
+    }
+    .progress-fill { animation: fillBar 1.2s cubic-bezier(.22,1,.36,1) both; }
+
+    /* Mobile sidebar */
+    #mob-overlay { transition:opacity 0.25s; }
+    #sidebar     { transition:transform 0.3s cubic-bezier(.22,1,.36,1); }
+
+    /* Table row hover */
+    .perf-row { transition:background 0.15s; }
+    .perf-row:hover { background:#fff7ed; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width:5px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:#e5e7eb; border-radius:99px; }
+  </style>
+</head>
+<body class="bg-gray-50 text-ink flex">
+
+<!-- =============================
+     SIDEBAR
+============================== -->
+<aside id="sidebar" class="
+  fixed lg:static inset-y-0 left-0 z-40
+  w-64 bg-sidebar flex-shrink-0 flex flex-col
+  -translate-x-full lg:translate-x-0
+  transition-transform
+">
+  <!-- Logo -->
+  <div class="px-5 py-5 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center">
+        <i class="fa-solid fa-cards-blank text-white text-sm"></i>
+      </div>
+      <span class="font-display font-bold text-white text-base">Happy<span class="text-brand-400">Hobbies</span></span>
+    </div>
+    <button onclick="closeSidebar()" class="lg:hidden text-gray-500 hover:text-white">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+
+  <!-- Label -->
+  <div class="px-5 mb-2">
+    <span class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Menu Utama</span>
+  </div>
+
+  <!-- Nav -->
+  <nav class="flex-1 px-3 space-y-0.5 overflow-y-auto">
+    <a href="#" class="sidebar-link">
+      <i class="fa-solid fa-gauge-high w-4 text-center"></i> Dashboard
+    </a>
+    <a href="#" class="sidebar-link">
+      <i class="fa-solid fa-bag-shopping w-4 text-center"></i> Pesanan
+      <span class="ml-auto bg-brand-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">12</span>
+    </a>
+    <a href="#" class="sidebar-link active">
+      <i class="fa-solid fa-boxes-stacked w-4 text-center"></i> Produk
+    </a>
+    <a href="#" class="sidebar-link">
+      <i class="fa-solid fa-chart-line w-4 text-center"></i> Laporan
+    </a>
+
+    <div class="px-2 pt-5 pb-2">
+      <span class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Pengaturan</span>
+    </div>
+    <a href="#" class="sidebar-link">
+      <i class="fa-solid fa-users w-4 text-center"></i> Manajemen PIC
+    </a>
+    <a href="#" class="sidebar-link">
+      <i class="fa-solid fa-gear w-4 text-center"></i> Pengaturan Toko
+    </a>
+  </nav>
+
+  <!-- User info -->
+  <div class="px-4 py-4 border-t border-white/10 flex items-center gap-3">
+    <div class="w-8 h-8 rounded-full bg-brand-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">SA</div>
+    <div class="min-w-0">
+      <p class="text-white text-sm font-medium truncate">Super Admin</p>
+      <p class="text-slate-400 text-xs">admin@happyhobbies.id</p>
+    </div>
+    <a href="index.html" class="ml-auto text-slate-500 hover:text-brand-400 transition-colors" title="Lihat Toko">
+      <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+    </a>
+  </div>
+</aside>
+
+<!-- Mobile overlay -->
+<div id="mob-overlay" class="fixed inset-0 bg-black/50 z-30 hidden opacity-0 lg:hidden" onclick="closeSidebar()"></div>
+
+
+<!-- =============================
+     MAIN AREA
+============================== -->
+<div class="flex-1 flex flex-col min-h-screen min-w-0">
+
+  <!-- Top bar -->
+  <header class="bg-white border-b border-gray-100 px-4 sm:px-6 py-3.5 flex items-center gap-3 sticky top-0 z-20">
+    <button onclick="openSidebar()" class="lg:hidden w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 text-muted">
+      <i class="fa-solid fa-bars text-sm"></i>
+    </button>
+    <div>
+      <h1 class="font-display font-bold text-lg leading-none text-ink">Manajemen Produk</h1>
+      <p class="text-xs text-muted mt-0.5">Bulk Upload & Laporan Kinerja PIC</p>
+    </div>
+    <div class="ml-auto flex items-center gap-2">
+      <span class="hidden sm:inline-block text-xs text-muted bg-gray-100 px-3 py-1.5 rounded-lg">
+        <i class="fa-regular fa-clock mr-1"></i> Senin, 16 Juni 2025 · 09:42 WIB
+      </span>
+      <button class="relative w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 text-muted hover:bg-brand-50 hover:text-brand-500 transition-colors">
+        <i class="fa-regular fa-bell text-sm"></i>
+        <span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500"></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Scrollable content -->
+  <main class="flex-1 px-4 sm:px-6 py-6 overflow-y-auto">
+
+    <!-- STAT CARDS -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="fade-up d1 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-xs text-muted">Total Produk Aktif</p>
+            <p class="font-display font-bold text-2xl mt-1 text-ink">2.147</p>
+          </div>
+          <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
+            <i class="fa-solid fa-boxes-stacked text-blue-500 text-sm"></i>
+          </div>
+        </div>
+        <p class="text-[11px] text-green-600 mt-2 font-medium"><i class="fa-solid fa-arrow-up mr-0.5"></i>+175 hari ini</p>
+      </div>
+
+      <div class="fade-up d2 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-xs text-muted">Pesanan Pending</p>
+            <p class="font-display font-bold text-2xl mt-1 text-ink">12</p>
+          </div>
+          <div class="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center">
+            <i class="fa-solid fa-clock text-amber-500 text-sm"></i>
+          </div>
+        </div>
+        <p class="text-[11px] text-amber-600 mt-2 font-medium"><i class="fa-solid fa-circle-exclamation mr-0.5"></i>Perlu ditindaklanjuti</p>
+      </div>
+
+      <div class="fade-up d3 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-xs text-muted">Omzet Hari Ini</p>
+            <p class="font-display font-bold text-2xl mt-1 text-ink">8,4jt</p>
+          </div>
+          <div class="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center">
+            <i class="fa-solid fa-money-bill-trend-up text-green-500 text-sm"></i>
+          </div>
+        </div>
+        <p class="text-[11px] text-green-600 mt-2 font-medium"><i class="fa-solid fa-arrow-up mr-0.5"></i>+22% vs kemarin</p>
+      </div>
+
+      <div class="fade-up d4 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-xs text-muted">Input Produk Hari Ini</p>
+            <p class="font-display font-bold text-2xl mt-1 text-ink">175</p>
+          </div>
+          <div class="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center">
+            <i class="fa-solid fa-file-import text-brand-500 text-sm"></i>
+          </div>
+        </div>
+        <p class="text-[11px] text-muted mt-2 font-medium"><i class="fa-solid fa-users mr-0.5"></i>Oleh 2 PIC aktif</p>
+      </div>
+    </div>
+
+
+    <!-- BULK UPLOAD SECTION -->
+    <div class="fade-up d2 bg-white rounded-2xl border border-gray-100 shadow-sm mb-6 overflow-hidden">
+
+      <!-- Header -->
+      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-brand-500 flex items-center justify-center">
+            <i class="fa-solid fa-file-arrow-up text-white text-sm"></i>
+          </div>
+          <div>
+            <h2 class="font-display font-bold text-base text-ink">Import Data Produk (Bulk Upload)</h2>
+            <p class="text-xs text-muted">Upload ribuan SKU sekaligus. Hemat waktu, nol input manual.</p>
+          </div>
+        </div>
+        <a href="#" class="inline-flex items-center gap-2 text-xs text-brand-500 font-medium hover:text-brand-600 transition-colors border border-brand-200 rounded-lg px-3 py-2 hover:border-brand-400">
+          <i class="fa-solid fa-download"></i> Download Template .xlsx
+        </a>
+      </div>
+
+      <div class="p-5 space-y-5">
+
+        <!-- STEP 1: Select PIC -->
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+          <div class="flex items-start gap-3">
+            <div class="w-7 h-7 rounded-full bg-brand-500 text-white text-xs font-bold flex-shrink-0 flex items-center justify-center mt-0.5">1</div>
+            <div class="flex-1">
+              <label class="font-display font-semibold text-sm text-ink block mb-1">
+                Pilih PIC yang Menginput Data
+                <span class="text-red-500 ml-0.5">*</span>
+              </label>
+              <p class="text-xs text-muted mb-3">
+                <i class="fa-solid fa-circle-info mr-1 text-brand-400"></i>
+                Sistem menggunakan <strong>1 Akun Kesatuan</strong>. Pilih identitas PIC agar performa dapat terlacak otomatis.
+              </p>
+              <select id="pic-select" class="w-full sm:w-72 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-brand-400 bg-white shadow-sm">
+                <option value="">— Pilih PIC —</option>
+                <option value="budi">👤 Admin Budi</option>
+                <option value="siti">👤 Admin Siti</option>
+                <option value="reza">👤 Admin Reza</option>
+              </select>
+              <p class="text-[11px] text-amber-700 mt-2">
+                <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+                Wajib dipilih sebelum upload. Data akan terekam di Laporan Kinerja PIC.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 2: Drop Zone -->
+        <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4">
+          <div class="flex items-start gap-3 mb-3">
+            <div class="w-7 h-7 rounded-full bg-gray-300 text-white text-xs font-bold flex-shrink-0 flex items-center justify-center mt-0.5" id="step2-num">2</div>
+            <div>
+              <p class="font-display font-semibold text-sm text-ink">Upload File Excel Template (.xlsx)</p>
+              <p class="text-xs text-muted">Pastikan file menggunakan template resmi Happy Hobbies</p>
+            </div>
+          </div>
+
+          <div
+            id="drop-zone"
+            class="drop-zone rounded-2xl bg-white flex flex-col items-center justify-center py-12 px-6 text-center cursor-pointer"
+            ondragover="handleDragOver(event)"
+            ondragleave="handleDragLeave(event)"
+            ondrop="handleDrop(event)"
+            onclick="document.getElementById('file-input').click()"
+          >
+            <div id="dz-content">
+              <div class="w-16 h-16 rounded-2xl bg-brand-50 flex items-center justify-center mx-auto mb-4">
+                <i class="fa-solid fa-file-excel text-4xl text-green-500"></i>
+              </div>
+              <p class="font-display font-semibold text-ink mb-1">Drag & Drop file Excel di sini</p>
+              <p class="text-sm text-muted mb-4">atau klik untuk memilih file dari komputer</p>
+              <span class="inline-block px-4 py-2 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition-colors shadow-sm">
+                <i class="fa-solid fa-folder-open mr-2"></i>Pilih File .xlsx
+              </span>
+              <p class="text-[11px] text-muted mt-4">Format: .xlsx · Maks. 10MB · Hingga 5.000 baris per file</p>
+            </div>
+            <!-- Success state (hidden by default) -->
+            <div id="dz-success" class="hidden">
+              <div class="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4 success-pop">
+                <i class="fa-solid fa-check text-green-500 text-2xl"></i>
+              </div>
+              <p class="font-display font-semibold text-green-700 mb-1" id="file-name-display">products_batch_01.xlsx</p>
+              <p class="text-sm text-muted mb-4" id="file-meta-display">3.2 MB · 150 baris terdeteksi</p>
+              <button onclick="resetUpload(event)" class="text-xs text-muted underline hover:text-red-500">Ganti file</button>
+            </div>
+          </div>
+          <input type="file" id="file-input" accept=".xlsx,.xls" class="hidden" onchange="handleFileSelect(event)" />
+        </div>
+
+        <!-- Progress bar (hidden) -->
+        <div id="progress-wrap" class="hidden">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-sm font-medium text-ink">Memproses data…</span>
+            <span id="progress-pct" class="text-sm font-bold text-brand-500">0%</span>
+          </div>
+          <div class="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+            <div id="progress-bar" class="h-full bg-brand-500 rounded-full progress-fill" style="width:0%"></div>
+          </div>
+          <p class="text-xs text-muted mt-1.5" id="progress-msg">Memvalidasi kolom…</p>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="flex flex-col sm:flex-row gap-3 pt-1">
+          <button
+            id="upload-btn"
+            onclick="simulateUpload()"
+            class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-brand-500 text-white font-semibold text-sm hover:bg-brand-600 transition-colors shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <i class="fa-solid fa-rocket"></i> Proses Upload Sekarang
+          </button>
+          <button class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl border border-gray-200 text-sm font-medium text-muted hover:border-brand-400 hover:text-brand-600 transition-colors">
+            <i class="fa-regular fa-eye"></i> Preview Data
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- KINERJA PIC TABLE -->
+    <div class="fade-up d3 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center">
+            <i class="fa-solid fa-chart-bar text-white text-sm"></i>
+          </div>
+          <div>
+            <h2 class="font-display font-bold text-base text-ink">Laporan Kinerja PIC Hari Ini</h2>
+            <p class="text-xs text-muted">Tracking otomatis berdasarkan sesi upload yang dilakukan</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs bg-green-100 text-green-700 font-semibold px-3 py-1.5 rounded-full">
+            <span class="inline-block w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 align-middle animate-pulse"></span>Live
+          </span>
+          <button class="text-xs border border-gray-200 rounded-lg px-3 py-1.5 text-muted hover:border-brand-400 hover:text-brand-500 transition-colors">
+            <i class="fa-solid fa-download mr-1"></i>Export CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabel -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-gray-50 text-left">
+              <th class="px-5 py-3 text-[11px] font-semibold text-muted uppercase tracking-wider">PIC</th>
+              <th class="px-5 py-3 text-[11px] font-semibold text-muted uppercase tracking-wider">Jumlah Produk Diinput</th>
+              <th class="px-5 py-3 text-[11px] font-semibold text-muted uppercase tracking-wider">Progress Hari Ini</th>
+              <th class="px-5 py-3 text-[11px] font-semibold text-muted uppercase tracking-wider">Waktu Terakhir Input</th>
+              <th class="px-5 py-3 text-[11px] font-semibold text-muted uppercase tracking-wider">Status</th>
+            </tr>
+          </thead>
+          <tbody id="perf-tbody" class="divide-y divide-gray-50">
+
+            <!-- Row 1: Budi -->
+            <tr class="perf-row">
+              <td class="px-5 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold">AB</div>
+                  <div>
+                    <p class="font-semibold text-ink">Admin Budi</p>
+                    <p class="text-xs text-muted">budi@happyhobbies.id</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-5 py-4">
+                <div class="flex items-baseline gap-1">
+                  <span class="font-display font-bold text-xl text-ink">150</span>
+                  <span class="text-xs text-muted">produk</span>
+                </div>
+              </td>
+              <td class="px-5 py-4 w-40">
+                <div class="flex items-center gap-2">
+                  <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-brand-500 rounded-full" style="width:85%"></div>
+                  </div>
+                  <span class="text-xs font-semibold text-ink flex-shrink-0">85%</span>
+                </div>
+                <p class="text-[10px] text-muted mt-0.5">Target: 176 produk/hari</p>
+              </td>
+              <td class="px-5 py-4">
+                <div class="flex items-center gap-1.5">
+                  <i class="fa-regular fa-clock text-muted text-xs"></i>
+                  <span class="text-sm">09:31 WIB</span>
+                </div>
+                <p class="text-[10px] text-muted mt-0.5">3 sesi upload</p>
+              </td>
+              <td class="px-5 py-4">
+                <span class="inline-flex items-center gap-1.5 bg-green-100 text-green-700 text-xs font-semibold px-2.5 py-1 rounded-full">
+                  <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> Aktif
+                </span>
+              </td>
+            </tr>
+
+            <!-- Row 2: Siti -->
+            <tr class="perf-row">
+              <td class="px-5 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center text-pink-700 text-xs font-bold">AS</div>
+                  <div>
+                    <p class="font-semibold text-ink">Admin Siti</p>
+                    <p class="text-xs text-muted">siti@happyhobbies.id</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-5 py-4">
+                <div class="flex items-baseline gap-1">
+                  <span class="font-display font-bold text-xl text-ink">25</span>
+                  <span class="text-xs text-muted">produk</span>
+                </div>
+              </td>
+              <td class="px-5 py-4 w-40">
+                <div class="flex items-center gap-2">
+                  <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-amber-400 rounded-full" style="width:14%"></div>
+                  </div>
+                  <span class="text-xs font-semibold text-ink flex-shrink-0">14%</span>
+                </div>
+                <p class="text-[10px] text-muted mt-0.5">Target: 176 produk/hari</p>
+              </td>
+              <td class="px-5 py-4">
+                <div class="flex items-center gap-1.5">
+                  <i class="fa-regular fa-clock text-muted text-xs"></i>
+                  <span class="text-sm">08:57 WIB</span>
+                </div>
+                <p class="text-[10px] text-muted mt-0.5">1 sesi upload</p>
+              </td>
+              <td class="px-5 py-4">
+                <span class="inline-flex items-center gap-1.5 bg-yellow-100 text-yellow-700 text-xs font-semibold px-2.5 py-1 rounded-full">
+                  <span class="w-1.5 h-1.5 rounded-full bg-yellow-400"></span> Standby
+                </span>
+              </td>
+            </tr>
+
+            <!-- Row 3: Reza -->
+            <tr class="perf-row">
+              <td class="px-5 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 text-xs font-bold">AR</div>
+                  <div>
+                    <p class="font-semibold text-ink">Admin Reza</p>
+                    <p class="text-xs text-muted">reza@happyhobbies.id</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-5 py-4">
+                <div class="flex items-baseline gap-1">
+                  <span class="font-display font-bold text-xl text-gray-300">0</span>
+                  <span class="text-xs text-muted">produk</span>
+                </div>
+              </td>
+              <td class="px-5 py-4 w-40">
+                <div class="flex items-center gap-2">
+                  <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-gray-200 rounded-full" style="width:0%"></div>
+                  </div>
+                  <span class="text-xs font-semibold text-gray-300 flex-shrink-0">0%</span>
+                </div>
+                <p class="text-[10px] text-muted mt-0.5">Target: 176 produk/hari</p>
+              </td>
+              <td class="px-5 py-4">
+                <div class="flex items-center gap-1.5">
+                  <i class="fa-regular fa-clock text-gray-200 text-xs"></i>
+                  <span class="text-sm text-gray-300">—</span>
+                </div>
+                <p class="text-[10px] text-muted mt-0.5">Belum ada sesi</p>
+              </td>
+              <td class="px-5 py-4">
+                <span class="inline-flex items-center gap-1.5 bg-gray-100 text-gray-500 text-xs font-semibold px-2.5 py-1 rounded-full">
+                  <span class="w-1.5 h-1.5 rounded-full bg-gray-300"></span> Offline
+                </span>
+              </td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Footer info -->
+      <div class="px-5 py-3 bg-gray-50 border-t border-gray-100 flex flex-wrap items-center gap-x-6 gap-y-1">
+        <p class="text-xs text-muted"><i class="fa-solid fa-circle-info mr-1 text-brand-400"></i>Data diperbarui otomatis setiap kali upload selesai</p>
+        <p class="text-xs text-muted ml-auto">Total input hari ini: <strong class="text-ink">175 produk</strong></p>
+      </div>
+    </div>
+
+
+    <!-- RECENT UPLOAD LOG -->
+    <div class="fade-up d4 bg-white rounded-2xl border border-gray-100 shadow-sm mt-6 overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100">
+        <h2 class="font-display font-bold text-base text-ink">Riwayat Upload Hari Ini</h2>
+        <p class="text-xs text-muted mt-0.5">Log aktivitas bulk upload per sesi</p>
+      </div>
+      <div class="divide-y divide-gray-50">
+        <div class="px-5 py-3.5 flex items-center gap-4">
+          <div class="w-8 h-8 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-check text-green-500 text-xs"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-ink truncate">pokemon_sv4_batch3.xlsx</p>
+            <p class="text-xs text-muted">Admin Budi · 75 produk berhasil diimport</p>
+          </div>
+          <div class="text-right flex-shrink-0">
+            <p class="text-xs font-semibold text-ink">09:31 WIB</p>
+            <span class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Sukses</span>
+          </div>
+        </div>
+        <div class="px-5 py-3.5 flex items-center gap-4">
+          <div class="w-8 h-8 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-check text-green-500 text-xs"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-ink truncate">pokemon_sv3_batch2.xlsx</p>
+            <p class="text-xs text-muted">Admin Budi · 50 produk berhasil diimport</p>
+          </div>
+          <div class="text-right flex-shrink-0">
+            <p class="text-xs font-semibold text-ink">09:05 WIB</p>
+            <span class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Sukses</span>
+          </div>
+        </div>
+        <div class="px-5 py-3.5 flex items-center gap-4">
+          <div class="w-8 h-8 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-check text-green-500 text-xs"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-ink truncate">onepiece_op06_all.xlsx</p>
+            <p class="text-xs text-muted">Admin Siti · 25 produk berhasil diimport</p>
+          </div>
+          <div class="text-right flex-shrink-0">
+            <p class="text-xs font-semibold text-ink">08:57 WIB</p>
+            <span class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Sukses</span>
+          </div>
+        </div>
+        <div class="px-5 py-3.5 flex items-center gap-4">
+          <div class="w-8 h-8 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-check text-green-500 text-xs"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-ink truncate">pokemon_sv4_batch1.xlsx</p>
+            <p class="text-xs text-muted">Admin Budi · 25 produk berhasil diimport</p>
+          </div>
+          <div class="text-right flex-shrink-0">
+            <p class="text-xs font-semibold text-ink">08:42 WIB</p>
+            <span class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Sukses</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div><!-- /main area -->
+
+
+<!-- UPLOAD SUCCESS TOAST -->
+<div id="upload-toast" class="fixed bottom-6 right-6 z-50 bg-ink text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-sm font-medium opacity-0 pointer-events-none" style="transition:opacity 0.3s,transform 0.3s;transform:translateY(8px)">
+  <i class="fa-solid fa-rocket text-brand-400"></i>
+  <span id="upload-toast-msg">Upload berhasil! 150 produk telah diimport.</span>
+</div>
+
+
+<script>
+  // Sidebar mobile
+  function openSidebar() {
+    const s = document.getElementById('sidebar');
+    const o = document.getElementById('mob-overlay');
+    s.classList.remove('-translate-x-full');
+    o.classList.remove('hidden');
+    setTimeout(() => o.classList.remove('opacity-0'), 10);
+  }
+  function closeSidebar() {
+    const s = document.getElementById('sidebar');
+    const o = document.getElementById('mob-overlay');
+    s.classList.add('-translate-x-full');
+    o.classList.add('opacity-0');
+    setTimeout(() => o.classList.add('hidden'), 260);
+  }
+
+  // Drag & drop
+  function handleDragOver(e) {
+    e.preventDefault();
+    document.getElementById('drop-zone').classList.add('drag-over');
+  }
+  function handleDragLeave(e) {
+    document.getElementById('drop-zone').classList.remove('drag-over');
+  }
+  function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('drop-zone').classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) showFileSelected(file);
+  }
+  function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (file) showFileSelected(file);
+  }
+  function showFileSelected(file) {
+    document.getElementById('dz-content').classList.add('hidden');
+    const succ = document.getElementById('dz-success');
+    succ.classList.remove('hidden');
+    document.getElementById('file-name-display').textContent = file.name;
+    const rows = Math.floor(Math.random()*200)+30;
+    const kb = (file.size/1024).toFixed(0);
+    document.getElementById('file-meta-display').textContent = `${kb} KB · ${rows} baris terdeteksi`;
+    succ.classList.add('success-pop');
+  }
+  function resetUpload(e) {
+    e.stopPropagation();
+    document.getElementById('dz-content').classList.remove('hidden');
+    document.getElementById('dz-success').classList.add('hidden');
+    document.getElementById('dz-success').classList.remove('success-pop');
+    document.getElementById('file-input').value = '';
+    document.getElementById('progress-wrap').classList.add('hidden');
+  }
+
+  // Upload simulation
+  function simulateUpload() {
+    const pic = document.getElementById('pic-select').value;
+    if (!pic) {
+      document.getElementById('pic-select').classList.add('border-red-400','ring-2','ring-red-100');
+      setTimeout(() => document.getElementById('pic-select').classList.remove('border-red-400','ring-2','ring-red-100'), 2000);
+      return;
+    }
+    const wrap = document.getElementById('progress-wrap');
+    const bar  = document.getElementById('progress-bar');
+    const pct  = document.getElementById('progress-pct');
+    const msg  = document.getElementById('progress-msg');
+    const btn  = document.getElementById('upload-btn');
+    const msgs = ['Memvalidasi kolom…','Membaca data baris…','Memeriksa duplikat SKU…','Menyimpan ke database…','Menyelesaikan…'];
+
+    wrap.classList.remove('hidden');
+    btn.disabled = true;
+
+    let p = 0;
+    const iv = setInterval(() => {
+      p += Math.random() * 22;
+      if (p > 100) p = 100;
+      bar.style.width = p + '%';
+      pct.textContent = Math.round(p) + '%';
+      msg.textContent = msgs[Math.min(Math.floor(p/25), msgs.length-1)];
+      if (p >= 100) {
+        clearInterval(iv);
+        btn.disabled = false;
+        showUploadToast();
+        addPerfRow(pic);
+      }
+    }, 260);
+  }
+
+  function showUploadToast() {
+    const t = document.getElementById('upload-toast');
+    t.style.opacity = '1';
+    t.style.transform = 'translateY(0)';
+    setTimeout(() => {
+      t.style.opacity = '0';
+      t.style.transform = 'translateY(8px)';
+    }, 3000);
+  }
+
+  function addPerfRow(pic) {
+    const names = { budi:'Admin Budi', siti:'Admin Siti', reza:'Admin Reza' };
+    const initials = { budi:'AB', siti:'AS', reza:'AR' };
+    const colors = { budi:'blue', siti:'pink', reza:'purple' };
+    const now = new Date();
+    const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ' WIB';
+    const tbody = document.getElementById('perf-tbody');
+    const rows = tbody.querySelectorAll('tr');
+    // flash existing rows
+    rows.forEach(r => { r.style.background='#fff7ed'; setTimeout(()=>r.style.background='',800); });
+    const t = document.getElementById('upload-toast-msg');
+    t.textContent = `Upload berhasil! Data oleh ${names[pic]} tersimpan. Tabel diperbarui.`;
+  }
+</script>
+
+</body>
+</html>
